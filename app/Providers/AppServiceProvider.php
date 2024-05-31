@@ -37,30 +37,33 @@ class AppServiceProvider extends ServiceProvider
      */
     public function  boot(Dispatcher $events)
     {
+        //\URL::forceScheme('https');
         Paginator::useBootstrap();
 
         $events->listen(BuildingMenu::class, function (BuildingMenu $event) {
 
             $OrdersNotFinishCount = Orders::where('statu', '!=', '3')->count();
-            
+
             $DeliverysRequestsCount = OrderLines::where(
-                function($query) {
+                function ($query) {
                     return $query
                         ->where('delivery_status', '=', '1')
                         ->orWhere('delivery_status', '=', '2');
-                })
-                ->whereHas('order', function($q){
+                }
+            )
+                ->whereHas('order', function ($q) {
                     $q->where('type', '=', '1');
                 })->count();
 
             $InvoicesRequestsCount =  DeliveryLines::where(
-                                                        function($query) {
-                                                            return $query
-                                                                ->where('invoice_status', '=', '1')
-                                                                ->orWhere('invoice_status', '=', '2');
-                                                        })->count();
+                function ($query) {
+                    return $query
+                        ->where('invoice_status', '=', '1')
+                        ->orWhere('invoice_status', '=', '2');
+                }
+            )->count();
 
-            /* not use because Status is not init on start of instal, and what is incident if statu is null on menu init ?*/ 
+            /* not use because Status is not init on start of instal, and what is incident if statu is null on menu init ?*/
             //$Status = Status::select('id')->orderBy('order')->first();
             /*$PurchasesRequestsCount = Task::where('status_id', '=', $Status->id)
                                                                         ->whereNotNull('order_lines_id')
@@ -75,8 +78,10 @@ class AppServiceProvider extends ServiceProvider
                                                                                     ->orWhere('type', '=', '7');
                                                                             })->get();*/
 
-            $PurchasesWaintingReceiptCount = PurchaseLines::where('receipt_qty','<=', 'qty')->count();
-            $PurchasesWaintingInvoiceCount = PurchaseReceiptLines::whereHas('purchaseReceipt', function($q){$q->where('statu',1);})->count();
+            $PurchasesWaintingReceiptCount = PurchaseLines::where('receipt_qty', '<=', 'qty')->count();
+            $PurchasesWaintingInvoiceCount = PurchaseReceiptLines::whereHas('purchaseReceipt', function ($q) {
+                $q->where('statu', 1);
+            })->count();
 
             $event->menu->addBefore('orders_lines_list', [
                 'text' => 'orders_list_trans_key',
